@@ -8,6 +8,7 @@ package meteordevelopment.meteorclient.mixin;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.entity.DamageEvent;
 import meteordevelopment.meteorclient.events.entity.player.CanWalkOnFluidEvent;
+import meteordevelopment.meteorclient.events.entity.player.TeleportParticleEvent;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.movement.AntiLevitation;
 import meteordevelopment.meteorclient.systems.modules.player.OffhandCrash;
@@ -79,6 +80,15 @@ public abstract class LivingEntityMixin extends Entity {
             info.cancel();
         }
     }
+
+    @Inject(method = "handleStatus", at = @At("HEAD"), cancellable = true)
+    private void onHandleStatus(byte status, CallbackInfo ci) {
+        //ty rybot youre a hero
+        if ((Object) this == mc.player && status == 46 && Utils.canUpdate()) {
+            MeteorClient.EVENT_BUS.post(TeleportParticleEvent.get(this.getX(), this.getY(), this.getZ()));
+        }
+    }
+
 
     @ModifyArg(method = "swingHand(Lnet/minecraft/util/Hand;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;swingHand(Lnet/minecraft/util/Hand;Z)V"))
     private Hand setHand(Hand hand) {

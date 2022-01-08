@@ -12,10 +12,7 @@ import meteordevelopment.meteorclient.events.meteor.KeyEvent;
 import meteordevelopment.meteorclient.events.meteor.MouseScrollEvent;
 import meteordevelopment.meteorclient.events.world.ChunkOcclusionEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.settings.BoolSetting;
-import meteordevelopment.meteorclient.settings.DoubleSetting;
-import meteordevelopment.meteorclient.settings.Setting;
-import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
@@ -90,10 +87,10 @@ public class Freecam extends Module {
             .build()
     );
 
-    private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
+    private final Setting<RotationMode> rotate = sgGeneral.add(new EnumSetting.Builder<RotationMode>()
             .name("rotate")
-            .description("Rotates to the block or entity you are looking at.")
-            .defaultValue(false)
+            .description("Rotation mode for freecam.")
+            .defaultValue(RotationMode.None)
             .build()
     );
 
@@ -172,20 +169,26 @@ public class Freecam extends Module {
         double velY = 0;
         double velZ = 0;
 
-        if (rotate.get()) {
-            BlockPos crossHairPos;
-            Vec3d crossHairPosition;
+        switch (rotate.get()) {
+            case ToBlock -> {
+                BlockPos crossHairPos;
+                Vec3d crossHairPosition;
 
-            if (mc.crosshairTarget instanceof EntityHitResult) {
-                crossHairPos = ((EntityHitResult) mc.crosshairTarget).getEntity().getBlockPos();
-                Rotations.rotate(Rotations.getYaw(crossHairPos), Rotations.getPitch(crossHairPos), 0, null);
-            } else {
-                crossHairPosition = mc.crosshairTarget.getPos();
-                crossHairPos = ((BlockHitResult) mc.crosshairTarget).getBlockPos();
+                if (mc.crosshairTarget instanceof EntityHitResult) {
+                    crossHairPos = ((EntityHitResult) mc.crosshairTarget).getEntity().getBlockPos();
+                    Rotations.rotate(Rotations.getYaw(crossHairPos), Rotations.getPitch(crossHairPos), 0, null);
+                } else {
+                    crossHairPosition = mc.crosshairTarget.getPos();
+                    crossHairPos = ((BlockHitResult) mc.crosshairTarget).getBlockPos();
 
-                if (!mc.world.getBlockState(crossHairPos).isAir()) {
-                    Rotations.rotate(Rotations.getYaw(crossHairPosition), Rotations.getPitch(crossHairPosition), 0, null);
+                    if (!mc.world.getBlockState(crossHairPos).isAir()) {
+                        Rotations.rotate(Rotations.getYaw(crossHairPosition), Rotations.getPitch(crossHairPosition), 0, null);
+                    }
                 }
+            }
+
+            case Follow -> {
+                Rotations.rotate(yaw, pitch);
             }
         }
 
@@ -337,5 +340,11 @@ public class Freecam extends Module {
     }
     public double getPitch(float tickDelta) {
         return MathHelper.lerp(tickDelta, prevPitch, pitch);
+    }
+
+    public enum RotationMode {
+        ToBlock,
+        Follow,
+        None
     }
 }
