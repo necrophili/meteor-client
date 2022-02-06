@@ -54,7 +54,7 @@ public class NameHistoryCommand extends Command {
                 BaseText initial = new LiteralText(name);
                 initial.append(new LiteralText(name.endsWith("s") ? "'" : "'s"));
 
-                Color nameColor = PlayerUtils.getPlayerColor(mc.world.getPlayerByUuid(uuid), Utils.WHITE);
+                Color nameColor = Utils.WHITE;
 
                 initial.setStyle(initial.getStyle()
                         .withColor(new TextColor(nameColor.getPacked()))
