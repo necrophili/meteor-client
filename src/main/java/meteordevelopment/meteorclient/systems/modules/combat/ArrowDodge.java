@@ -5,6 +5,8 @@
 
 package meteordevelopment.meteorclient.systems.modules.combat;
 
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixin.ProjectileEntityAccessor;
 import meteordevelopment.meteorclient.mixin.ProjectileInGroundAccessor;
@@ -12,7 +14,10 @@ import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
@@ -29,6 +34,14 @@ import java.util.List;
 public class ArrowDodge extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgMovement = settings.createGroup("Movement");
+
+    private final Setting<Object2BooleanMap<EntityType<?>>> projectiles = sgGeneral.add(new EntityTypeListSetting.Builder()
+        .name("projectiles")
+        .description("Projectile entities to dodge.")
+        .defaultValue(EntityType.ARROW, EntityType.SPECTRAL_ARROW)
+        .filter(this::projectileFilter)
+        .build()
+    );
 
     private final Setting<Integer> arrowLookahead = sgGeneral.add(new IntSetting.Builder()
         .name("arrow-lookahead")
@@ -92,6 +105,7 @@ public class ArrowDodge extends Module {
 
         for (Entity e : mc.world.getEntities()) {
             if (!(e instanceof ProjectileEntity)) continue;
+            if (!projectiles.get().equals(e)) continue;
             if (e instanceof PersistentProjectileEntity && ((ProjectileInGroundAccessor) e).getInGround()) continue;
             if (ignoreOwn.get() && ((ProjectileEntityAccessor) e).getOwnerUuid().equals(mc.player.getUuid())) continue;
 
@@ -165,6 +179,16 @@ public class ArrowDodge extends Module {
             return mc.world.getBlockState(blockPos.down()).getCollisionShape(mc.world, blockPos.down()) != VoxelShapes.empty();
         }
         return true;
+    }
+
+    private boolean projectileFilter(EntityType entity) {
+        return entity == EntityType.ARROW ||
+            entity == EntityType.SPECTRAL_ARROW ||
+            entity == EntityType.TRIDENT ||
+            entity == EntityType.SHULKER_BULLET ||
+            entity == EntityType.LLAMA_SPIT ||
+            entity == EntityType.SMALL_FIREBALL ||
+            entity == EntityType.FIREBALL;
     }
 
     public enum MoveType {
